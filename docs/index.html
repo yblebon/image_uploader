@@ -68,7 +68,7 @@
             reader.onload = async function(e) {
                 const base64Image = e.target.result.split(',')[1]; // Get base64 data
                 const payload = {
-                    event_type: "image-upload", // Required for repository_dispatch
+                    event_type: "upload-image", // Required for repository_dispatch
                     client_payload: {
                         image: base64Image,
                         category: category
