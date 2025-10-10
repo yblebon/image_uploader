@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Upload with Category and GitHub Token</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            text-align: center;
+        }
+        .form-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        input, select, button {
+            padding: 10px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #status {
+            margin-top: 20px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>Upload Image with Category</h1>
+    <div class="form-container">
+        <input type="file" id="imageInput" accept="image/*" required>
+        <select id="category" required>
+            <option value="" disabled selected>Select a category</option>
+            <option value="podcasts">Podcasts</option>
+            <option value="jokes">Jokes</option>
+        </select>
+        <input type="password" id="githubToken" placeholder="GitHub Personal Access Token" required>
+        <button onclick="uploadImage()">Upload</button>
+    </div>
+    <p id="status"></p>
+
+    <script>
+        async function uploadImage() {
+            const imageInput = document.getElementById('imageInput');
+            const category = document.getElementById('category').value;
+            const githubToken = document.getElementById('githubToken').value;
+            const status = document.getElementById('status');
+
+            if (!imageInput.files[0] || !category || !githubToken) {
+                status.textContent = 'Please select an image, a category, and enter a GitHub token.';
+                return;
+            }
+
+            const file = imageInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = async function(e) {
+                const base64Image = e.target.result.split(',')[1]; // Get base64 data
+                const payload = {
+                    event_type: "image-upload", // Required for repository_dispatch
+                    client_payload: {
+                        image: base64Image,
+                        category: category
+                    }
+                };
+
+                // Replace with your GitHub repository dispatch URL
+                const webhookUrl = 'https://api.github.com/repos/OWNER/REPO/dispatches';
+
+                try {
+                    status.textContent = 'Uploading...';
+                    const response = await fetch(webhookUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${githubToken}`,
+                            'Accept': 'application/vnd.github.v3+json'
+                        },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.ok) {
+                        status.textContent = 'Image uploaded successfully!';
+                    } else {
+                        const errorData = await response.json();
+                        status.textContent = `Error uploading image: ${errorData.message || response.statusText}`;
+                    }
+                } catch (error) {
+                    status.textContent = 'Error: ' + error.message;
+                }
+            };
+
+            reader.readAsDataURL(file);
+        }
+    </script>
+</body>
+</html>
